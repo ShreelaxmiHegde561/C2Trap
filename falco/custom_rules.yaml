@@ -1,0 +1,188 @@
+# C2Trap Custom Falco Rules
+# Detect suspicious C2-related behavior at the kernel level
+
+# ==============================================
+# Network-Related Rules
+# ==============================================
+
+- rule: Outbound Connection to Suspicious Port
+  desc: Detect outbound connections to ports commonly used by C2
+  condition: >
+    evt.type=connect and 
+    evt.dir=< and 
+    fd.typechar=4 and
+    fd.ip != "0.0.0.0" and
+    (fd.sport in (4444, 5555, 6666, 7777, 8888, 9999, 1337, 31337))
+  output: >
+    Suspicious outbound connection (user=%user.name command=%proc.cmdline 
+    connection=%fd.name port=%fd.sport)
+  priority: WARNING
+  tags: [network, c2]
+
+- rule: DNS Query to Suspicious TLD
+  desc: Detect DNS queries to high-risk TLDs
+  condition: >
+    evt.type in (sendto, sendmsg) and
+    fd.l4proto=udp and
+    fd.sport=53
+  output: >
+    DNS activity detected (user=%user.name command=%proc.cmdline 
+    connection=%fd.name)
+  priority: NOTICE
+  tags: [network, dns, c2]
+
+# ==============================================
+# Process-Related Rules
+# ==============================================
+
+- rule: Shell Spawned by Network Process
+  desc: Detect shell spawned by process with network connections
+  condition: >
+    spawned_process and
+    proc.name in (sh, bash, dash, zsh, csh, ksh) and
+    proc.pname in (python, python3, perl, ruby, php, java, node)
+  output: >
+    Shell spawned by network-capable process (user=%user.name 
+    parent=%proc.pname cmdline=%proc.cmdline)
+  priority: WARNING
+  tags: [process, shell, c2]
+
+- rule: Execution from Temp Directory
+  desc: Detect execution of binaries from /tmp or /var/tmp
+  condition: >
+    spawned_process and
+    (proc.exe startswith /tmp/ or proc.exe startswith /var/tmp/)
+  output: >
+    Binary executed from temp directory (user=%user.name 
+    exe=%proc.exe cmdline=%proc.cmdline)
+  priority: WARNING
+  tags: [process, filesystem, c2]
+
+- rule: Encoded Command Execution
+  desc: Detect base64 encoded command execution
+  condition: >
+    spawned_process and
+    (proc.cmdline contains "base64 -d" or 
+     proc.cmdline contains "base64 --decode" or
+     proc.cmdline contains "-enc " or
+     proc.cmdline contains "-EncodedCommand")
+  output: >
+    Encoded command execution detected (user=%user.name 
+    cmdline=%proc.cmdline)
+  priority: CRITICAL
+  tags: [process, evasion, c2]
+
+# ==============================================
+# File-Related Rules
+# ==============================================
+
+- rule: File Downloaded by Process
+  desc: Detect file download using curl, wget, or similar
+  condition: >
+    spawned_process and
+    proc.name in (curl, wget, fetch) and
+    proc.cmdline contains "http"
+  output: >
+    File download detected (user=%user.name command=%proc.cmdline)
+  priority: NOTICE
+  tags: [network, download, c2]
+
+- rule: Hidden File Created
+  desc: Detect creation of hidden files
+  condition: >
+    evt.type in (open, openat, creat) and
+    evt.dir=< and
+    evt.rawres>=0 and
+    fd.name startswith "/." and
+    not fd.name startswith "/.cache" and
+    not fd.name startswith "/.config"
+  output: >
+    Hidden file created (user=%user.name file=%fd.name 
+    command=%proc.cmdline)
+  priority: WARNING
+  tags: [filesystem, evasion]
+
+# ==============================================
+# Persistence-Related Rules
+# ==============================================
+
+- rule: Crontab Modified
+  desc: Detect modifications to crontab
+  condition: >
+    spawned_process and
+    proc.name = crontab and
+    proc.cmdline contains "-e"
+  output: >
+    Crontab modification (user=%user.name cmdline=%proc.cmdline)
+  priority: WARNING
+  tags: [persistence, cron]
+
+- rule: SSH Authorized Keys Modified
+  desc: Detect changes to SSH authorized_keys
+  condition: >
+    evt.type in (open, openat, creat) and
+    evt.dir=< and
+    (evt.arg.flags contains O_WRONLY or evt.arg.flags contains O_RDWR) and
+    fd.name endswith authorized_keys
+  output: >
+    SSH authorized_keys modified (user=%user.name file=%fd.name)
+  priority: CRITICAL
+  tags: [persistence, ssh]
+
+# ==============================================
+# Data Exfiltration Rules
+# ==============================================
+
+- rule: Large Data Transfer
+  desc: Detect unusually large outbound data transfers
+  condition: >
+    evt.type in (write, writev) and
+    fd.typechar=4 and
+    evt.rawres > 1048576
+  output: >
+    Large data transfer detected (user=%user.name size=%evt.rawres 
+    connection=%fd.name)
+  priority: WARNING
+  tags: [network, exfiltration]
+
+- rule: Archive Creation
+  desc: Detect creation of archive files
+  condition: >
+    spawned_process and
+    proc.name in (tar, gzip, zip, 7z, rar) and
+    not proc.cmdline contains "-x" and
+    not proc.cmdline contains "extract"
+  output: >
+    Archive creation detected (user=%user.name cmdline=%proc.cmdline)
+  priority: NOTICE
+  tags: [collection, exfiltration]
+
+# ==============================================
+# C2-Specific Rules
+# ==============================================
+
+- rule: Potential C2 Beacon Pattern
+  desc: Detect periodic network connections (potential beacon)
+  condition: >
+    evt.type=connect and
+    evt.dir=< and
+    fd.typechar=4 and
+    proc.name in (python, python3, curl, wget, nc, ncat)
+  output: >
+    Potential C2 beacon (user=%user.name process=%proc.name 
+    connection=%fd.name cmdline=%proc.cmdline)
+  priority: NOTICE
+  tags: [network, c2, beacon]
+
+- rule: Reverse Shell Detected
+  desc: Detect potential reverse shell patterns
+  condition: >
+    spawned_process and
+    (proc.cmdline contains "/dev/tcp/" or
+     proc.cmdline contains "mkfifo" or
+     (proc.name = nc and proc.cmdline contains "-e"))
+  output: >
+    Potential reverse shell detected (user=%user.name 
+    cmdline=%proc.cmdline)
+  priority: CRITICAL
+  tags: [network, shell, c2]

@@ -1,0 +1,69 @@
+#!/bin/bash
+# C2Trap - One-Click Launcher
+# This script handles environment cleanup, directory setup, and container orchestration.
+
+# Colors for better visibility
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                                    C2Trap                            ║${NC}"
+echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+
+# 1. Navigation & Environment   
+cd "$(dirname "$0")" || exit 1
+unset DOCKER_HOST # Ensure we're targeting local Docker engine
+
+# 2. Pre-flight Checks
+echo -e "${YELLOW}[*] Performing pre-flight checks...${NC}"
+
+# Check for Docker
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}[!] ERROR: Docker is not running. Please start it with 'sudo systemctl start docker'${NC}"
+    exit 1
+fi
+
+# Determine Compose Command
+if docker compose version > /dev/null 2>&1; then
+    DOCKER_CMD="docker compose"
+elif docker-compose version > /dev/null 2>&1; then
+    DOCKER_CMD="docker-compose"
+else
+    echo -e "${RED}[!] ERROR: Neither 'docker compose' nor 'docker-compose' was found.${NC}"
+    exit 1
+fi
+
+# 3. Directory & Perms Setup
+echo -e "${YELLOW}[*] Initializing local directories...${NC}"
+mkdir -p logs/falco data/ioc_cache quarantine/processed
+chmod -R 777 logs data quarantine # Ensure containers can write
+
+# 4. Container Orchestration
+echo -e "${YELLOW}[*] Building and starting all C2Trap services (this may take a moment)...${NC}"
+$DOCKER_CMD down --remove-orphans > /dev/null 2>&1 # Clean start
+$DOCKER_CMD up -d --build
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}[+] Successfully launched all containers!${NC}"
+else
+    echo -e "${RED}[!] ERROR: Docker build/up failed. Check logs above.${NC}"
+    exit 1
+fi
+
+# 5. Summary & Health Check
+echo -e "${YELLOW}[*] Waiting for services to initialize...${NC}"
+sleep 5
+
+echo -e "\n${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                 SYSTEM READY - C2Trap ACTIVATED           ║${NC}"
+echo -e "${GREEN}╠═══════════════════════════════════════════════════════════╣${NC}"
+echo -e "${GREEN}║  Dashboard:    http://localhost:8000                      ║${NC}"
+echo -e "${GREEN}║  Auto-Analyzer: Running (watching quarantine/)            ║${NC}"
+echo -e "${GREEN}║  VT Enrichment: Active (Asynchronous)                      ║${NC}"
+echo -e "${GREEN}╠═══════════════════════════════════════════════════════════╣${NC}"
+echo -e "${GREEN}║  To test traffic:  python3 scripts/test_c2.py             ║${NC}"
+echo -e "${GREEN}║  To monitor logs:  docker logs -f c2trap-analysis         ║${NC}"
+echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}\n"

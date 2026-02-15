@@ -1,0 +1,32 @@
+# C2Trap Python Dependencies
+
+# Core
+flask==3.0.0
+gunicorn==21.2.0
+requests==2.31.0
+
+# FastAPI Dashboard
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.6.0
+
+# Traffic Analysis
+scapy==2.5.0
+pyshark==0.6
+
+# DNS
+dnslib==0.9.24
+
+# FTP
+pyftpdlib==1.5.8
+
+# SMTP
+aiosmtpd==1.4.4
+
+# Sandbox
+docker==7.0.0
+
+# Utilities
+python-dotenv==1.0.0
+pyyaml==6.0.1
+aiofiles==23.2.1

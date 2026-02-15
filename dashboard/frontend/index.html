@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C2Trap | Cyber Defense Center</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <!-- Animated Background Mesh -->
+    <div class="animated-background">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon-wrapper">
+                    <div class="logo-glow"></div>
+                    <div class="logo-icon"><i data-lucide="shield-check"></i></div>
+                </div>
+                <div class="logo-text">
+                    <h2>C2Trap</h2>
+                    <span>CYBER • OPS</span>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-view="overview">
+                    <span class="nav-icon"><i data-lucide="layout-grid"></i></span>
+                    <span>Command Center</span>
+                </a>
+                <a href="#" class="nav-item" data-view="events">
+                    <span class="nav-icon"><i data-lucide="activity"></i></span>
+                    <span>Live Traffic</span>
+                </a>
+                <a href="#" class="nav-item" data-view="alerts">
+                    <span class="nav-icon"><i data-lucide="siren"></i></span>
+                    <span>Threat Alerts</span>
+                </a>
+                <a href="#" class="nav-item" data-view="mitre">
+                    <span class="nav-icon"><i data-lucide="target"></i></span>
+                    <span>MITRE ATT&CK</span>
+                </a>
+                <a href="#" class="nav-item" data-view="killchain">
+                    <span class="nav-icon"><i data-lucide="link"></i></span>
+                    <span>Kill Chain</span>
+                </a>
+                <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 8px 0;"></div>
+                <a href="#" class="nav-item" data-view="iocs">
+                    <span class="nav-icon"><i data-lucide="search"></i></span>
+                    <span>IOC Database</span>
+                </a>
+
+                <a href="#" class="nav-item" data-view="falco">
+                    <span class="nav-icon"><i data-lucide="server"></i></span>
+                    <span>Falco Runtime</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span>System Secure</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1 id="view-title">Command Center</h1>
+                        <span class="page-subtitle"><i data-lucide="clock" size="14"></i> Updated: <span
+                                id="last-update" style="font-family: 'JetBrains Mono'">--</span></span>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn" onclick="downloadReport()">
+                        <i data-lucide="file-text" class="btn-icon"></i> Download Report
+                    </button>
+                    <button class="btn" onclick="refreshData()">
+                        <i data-lucide="refresh-cw" class="btn-icon"></i> Refresh Intelligence
+                    </button>
+                </div>
+            </header>
+
+            <!-- Overview View -->
+            <section id="view-overview" class="view active">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card primary">
+                        <div class="stat-icon-wrapper"><i data-lucide="bar-chart-2"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-events">0</span>
+                            <span class="stat-label">Total Events</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card alert">
+                        <div class="stat-icon-wrapper"><i data-lucide="alert-triangle"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-alerts">0</span>
+                            <span class="stat-label">Active Alerts</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card critical">
+                        <div class="stat-icon-wrapper"><i data-lucide="zap"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-critical">0</span>
+                            <span class="stat-label">Critical Threats</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card technique">
+                        <div class="stat-icon-wrapper"><i data-lucide="crosshair"></i></div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="stat-techniques">0</span>
+                            <span class="stat-label">TTPs Identified</span>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <!-- Panels Grid -->
+                <div class="panels-grid">
+                    <!-- Recent Alerts -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div class="panel-title"><i data-lucide="siren"></i> Recent Threats</div>
+                            <a href="#" class="panel-link" data-view="alerts">View All</a>
+                        </div>
+                        <div class="panel-content" id="recent-alerts">
+                            <div class="loading-container">
+                                <div class="loading-spinner"></div>Loading threats...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Feed -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div class="panel-title"><i data-lucide="activity"></i> Live Intelligence Feed</div>
+                            <a href="#" class="panel-link" data-view="events">Full Log</a>
+                        </div>
+                        <div class="panel-content" id="recent-events">
+                            <div class="loading-container">
+                                <div class="loading-spinner"></div>Analyzing stream...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kill Chain -->
+                    <div class="panel full-width">
+                        <div class="panel-header">
+                            <div class="panel-title"><i data-lucide="link"></i> Cyber Kill Chain Status</div>
+                        </div>
+                        <div class="panel-content">
+                            <div class="killchain-container" id="killchain-mini"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Events View -->
+            <section id="view-events" class="view">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><i data-lucide="list"></i> Event Journal</div>
+                        <div class="filters">
+                            <select id="event-filter" class="btn" style="min-width: 150px;">
+                                <option value="">All Events</option>
+                                <option value="http_connection">HTTP Traffic</option>
+                                <option value="dns_query">DNS Queries</option>
+                                <option value="c2_beacon">C2 Beacons</option>
+                                <option value="ja3_fingerprint">JA3 Fingerprints</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="panel-content" id="events-list">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>Retrieving logs...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts View -->
+            <section id="view-alerts" class="view">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><i data-lucide="alert-octagon"></i> Threat Detection Log</div>
+                    </div>
+                    <div class="panel-content" id="alerts-list">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>Scanning alerts...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MITRE View -->
+            <section id="view-mitre" class="view">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><i data-lucide="matrix"></i> ATT&CK Matrix Coverage</div>
+                    </div>
+                    <div class="panel-content" id="mitre-matrix">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>Mapping TTPs...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Kill Chain View -->
+            <section id="view-killchain" class="view">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><i data-lucide="git-merge"></i> Kill Chain Analysis</div>
+                    </div>
+                    <div class="panel-content" id="killchain-full"></div>
+                </div>
+            </section>
+
+            <!-- IOCs View -->
+            <section id="view-iocs" class="view">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><i data-lucide="database"></i> Threat Intelligence Database</div>
+                        <div class="filters" style="display: flex; gap: 10px;">
+                            <button class="btn ioc-filter active" data-type="">All</button>
+                            <button class="btn ioc-filter" data-type="ip">IPs</button>
+                            <button class="btn ioc-filter" data-type="domain">Domains</button>
+                            <label class="btn" style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="malicious-only"> Malicious
+                            </label>
+                        </div>
+                    </div>
+                    <div class="panel-content" id="iocs-list">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div> querying database...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+
+            <!-- Falco View -->
+            <section id="view-falco" class="view">
+                <div class="panel full-width">
+                    <div class="panel-header">
+                        <div class="panel-title"><i data-lucide="terminal"></i> Runtime Security (Falco)</div>
+                        <select id="falco-priority-filter" class="btn">
+                            <option value="">All Priorities</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Critical">Critical</option>
+                            <option value="Warning">Warning</option>
+                            <option value="Notice">Notice</option>
+                        </select>
+                    </div>
+                    <div class="panel-content" id="falco-list">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div> Monitoring system calls...
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

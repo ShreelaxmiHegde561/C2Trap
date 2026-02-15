@@ -1,0 +1,47 @@
+# C2Trap Decoy Configuration
+
+# HTTP Decoy Settings
+http:
+  port: 8888
+  ssl_port: 8443
+  endpoints:
+    - path: /api/beacon
+      response: '{"status": "ok", "task": "sleep"}'
+    - path: /check
+      response: '{"alive": true}'
+    - path: /update
+      response: '{"version": "1.0.0"}'
+    - path: /gate
+      response: '{"gate": "open"}'
+  user_agents_to_flag:
+    - "Cobalt Strike"
+    - "Empire"
+    - "Metasploit"
+    - "Mimikatz"
+
+# DNS Decoy Settings
+dns:
+  port: 53
+  blackhole_response: "127.0.0.1"
+  suspicious_tlds:
+    - ".xyz"
+    - ".top"
+    - ".work"
+    - ".link"
+  c2_domains:
+    - "evil.com"
+    - "malware.net"
+    - "c2server.org"
+
+# FTP Decoy Settings
+ftp:
+  port: 21
+  passive_ports: "30000-30009"
+  banner: "Welcome to FTP Server"
+  max_upload_size: 10485760  # 10MB
+
+# SMTP Decoy Settings
+smtp:
+  port: 25
+  hostname: "mail.example.com"
+  accept_all_recipients: true

@@ -1,0 +1,172 @@
+version: '3.8'
+
+services:
+  # HTTP/HTTPS Honeypot
+  http-decoy:
+    build: ./decoys/http
+    container_name: c2trap-http
+    ports:
+      - "8888:8888"
+      - "8443:8443"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - c2trap-net
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=INFO
+
+  # DNS Server
+  dns-decoy:
+    build: ./decoys/dns
+    container_name: c2trap-dns
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - c2trap-net
+    restart: unless-stopped
+    cap_add:
+      - NET_BIND_SERVICE
+
+  # FTP Honeypot
+  ftp-decoy:
+    build: ./decoys/ftp
+    container_name: c2trap-ftp
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - c2trap-net
+    restart: unless-stopped
+
+  # SMTP Honeypot
+  smtp-decoy:
+    build: ./decoys/smtp
+    container_name: c2trap-smtp
+    ports:
+      - "25:25"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - c2trap-net
+    restart: unless-stopped
+
+  # Dashboard Backend
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    container_name: c2trap-dashboard
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./dashboard/frontend:/app/frontend
+      - ./dashboard/backend:/app/backend
+      - ./analysis/detection:/app/detection
+      - ./config:/app/config:ro
+    networks:
+      - c2trap-net
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=jsonl:///app/logs/analysis_queue.jsonl
+    env_file:
+      - ./config/virustotal.env
+    depends_on:
+      - http-decoy
+      - dns-decoy
+
+  # Analysis Engine
+  analysis:
+    build:
+      context: .
+      dockerfile: analysis/Dockerfile
+    container_name: c2trap-analysis
+    volumes:
+      - ./logs:/app/logs
+      - ./logs/zeek:/app/logs/zeek
+      - ./data:/app/data
+      - ./config:/app/config:ro
+      - ./quarantine:/app/quarantine
+    env_file:
+      - ./config/virustotal.env
+    networks:
+      - c2trap-net
+    restart: unless-stopped
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+  # Runtime Security
+  falco:
+    image: falcosecurity/falco:0.37.0
+    container_name: c2trap-falco
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /dev:/host/dev
+      - /proc:/host/proc:ro
+      - /boot:/host/boot:ro
+      - /lib/modules:/host/lib/modules:ro
+      - /usr:/host/usr:ro
+      - ./config/falco/falco.yaml:/etc/falco/falco.yaml
+      - ./logs/falco:/var/log/falco
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    networks:
+      - c2trap-net
+
+  # Network Security Monitor - Zeek IDS
+  zeek:
+    build:
+      context: ./zeek
+    container_name: c2trap-zeek
+    network_mode: host
+    volumes:
+      - ./logs/zeek:/usr/local/zeek/logs
+    restart: unless-stopped
+    environment:
+      - ZEEK_INTERFACE=any
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+  # Zeek Log Parser - Converts Zeek logs to C2Trap events
+  zeek_parser:
+    build:
+      context: ./analysis
+      dockerfile: Dockerfile.zeek_parser
+    container_name: c2trap-zeek-parser
+    volumes:
+      - ./logs:/app/logs
+      - ./logs/zeek:/usr/local/zeek/logs:ro
+    restart: unless-stopped
+    depends_on:
+      - zeek
+    networks:
+      - c2trap-net
+
+networks:
+  c2trap-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  logs:
+  data:

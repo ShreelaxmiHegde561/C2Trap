@@ -1,0 +1,85 @@
+{
+  "techniques": {
+    "T1071": {
+      "name": "Application Layer Protocol",
+      "tactic": "command-and-control",
+      "description": "Adversaries may communicate using application layer protocols",
+      "sub_techniques": {
+        "T1071.001": "Web Protocols",
+        "T1071.002": "File Transfer Protocols",
+        "T1071.003": "Mail Protocols",
+        "T1071.004": "DNS"
+      },
+      "indicators": ["http_beacon", "https_connection", "dns_query", "ftp_connection", "smtp_connection"]
+    },
+    "T1573": {
+      "name": "Encrypted Channel",
+      "tactic": "command-and-control",
+      "description": "Adversaries may encrypt C2 communications",
+      "sub_techniques": {
+        "T1573.001": "Symmetric Cryptography",
+        "T1573.002": "Asymmetric Cryptography"
+      },
+      "indicators": ["tls_connection", "encrypted_payload", "custom_encryption"]
+    },
+    "T1105": {
+      "name": "Ingress Tool Transfer",
+      "tactic": "command-and-control",
+      "description": "Adversaries may transfer tools from external systems",
+      "indicators": ["file_download", "payload_fetch", "tool_drop"]
+    },
+    "T1059": {
+      "name": "Command and Scripting Interpreter",
+      "tactic": "execution",
+      "sub_techniques": {
+        "T1059.001": "PowerShell",
+        "T1059.003": "Windows Command Shell",
+        "T1059.004": "Unix Shell"
+      },
+      "indicators": ["shell_execution", "script_run", "command_execution"]
+    },
+    "T1053": {
+      "name": "Scheduled Task/Job",
+      "tactic": "persistence",
+      "indicators": ["task_creation", "cron_modification", "scheduled_task"]
+    },
+    "T1082": {
+      "name": "System Information Discovery",
+      "tactic": "discovery",
+      "indicators": ["sysinfo_query", "hostname_lookup", "os_detection"]
+    },
+    "T1083": {
+      "name": "File and Directory Discovery",
+      "tactic": "discovery",
+      "indicators": ["dir_listing", "file_search", "path_enumeration"]
+    },
+    "T1057": {
+      "name": "Process Discovery",
+      "tactic": "discovery",
+      "indicators": ["process_list", "tasklist", "ps_command"]
+    }
+  },
+  "tactics": {
+    "initial-access": {"order": 1, "color": "#e74c3c"},
+    "execution": {"order": 2, "color": "#e67e22"},
+    "persistence": {"order": 3, "color": "#f1c40f"},
+    "privilege-escalation": {"order": 4, "color": "#2ecc71"},
+    "defense-evasion": {"order": 5, "color": "#1abc9c"},
+    "credential-access": {"order": 6, "color": "#3498db"},
+    "discovery": {"order": 7, "color": "#9b59b6"},
+    "lateral-movement": {"order": 8, "color": "#34495e"},
+    "collection": {"order": 9, "color": "#e91e63"},
+    "command-and-control": {"order": 10, "color": "#ff5722"},
+    "exfiltration": {"order": 11, "color": "#795548"},
+    "impact": {"order": 12, "color": "#607d8b"}
+  },
+  "kill_chain": {
+    "reconnaissance": {"order": 1, "mitre_tactics": []},
+    "weaponization": {"order": 2, "mitre_tactics": []},
+    "delivery": {"order": 3, "mitre_tactics": ["initial-access"]},
+    "exploitation": {"order": 4, "mitre_tactics": ["execution"]},
+    "installation": {"order": 5, "mitre_tactics": ["persistence"]},
+    "command_control": {"order": 6, "mitre_tactics": ["command-and-control"]},
+    "actions_on_objectives": {"order": 7, "mitre_tactics": ["exfiltration", "impact"]}
+  }
+}

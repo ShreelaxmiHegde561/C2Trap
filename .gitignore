@@ -1,0 +1,28 @@
+# Logs
+logs/
+*.log
+analysis_queue.jsonl
+
+# Runtime data
+data/
+quarantine/
+config/virustotal.env
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Databases
+*.db
+
+# Local configs
+.env
+
+# PDF reports (optional - remove if you want them public)
+test_report.pdf
+
+# OS
+.DS_Store
+
+

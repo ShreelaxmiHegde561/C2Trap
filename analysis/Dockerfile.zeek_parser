@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy parser script
+COPY zeek_parser.py /app/
+
+# Create log directories
+RUN mkdir -p /app/logs /usr/local/zeek/logs/current
+
+# Set environment
+ENV ZEEK_LOG_DIR=/usr/local/zeek/logs
+ENV OUTPUT_LOG=/app/logs/analysis_queue.jsonl
+ENV PYTHONUNBUFFERED=1
+
+# Run parser
+CMD ["python", "-u", "zeek_parser.py"]
